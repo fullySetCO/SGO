@@ -1,6 +1,6 @@
-# PROCESO OPERATIVO: MANTENIMIENTO
+# PROCESO OPERATIVO: MANTENIMIENTO Y SERVICIOS GENERALES
 
-**Versión:** 0.1
+**Versión:** 0.2
 **Estado:** Levantamiento inicial — proceso actual (as-is), sin diseño de solución todavía
 
 ---
@@ -65,7 +65,17 @@ Miembros del grupo de WhatsApp: profesores, coordinadores, jefe de mantenimiento
 
 No existe un plan de mantenimiento preventivo formal. Hay un intento reciente de planificación, pero sin seguimiento real. La operación es prácticamente 100% reactiva.
 
-## 5. Problemas identificados (gaps)
+## 5. Servicios Generales — variaciones respecto a Mantenimiento
+
+Servicios Generales comparte los mismos canales de reporte, el mismo grupo de WhatsApp y el mismo esquema general de zonas asignadas que Mantenimiento, con estas diferencias puntuales:
+
+- **Rutinas fijas:** a diferencia de Mantenimiento (100% reactivo), Servicios Generales tiene rutinas de aseo asignadas por zona que se cumplen de forma regular, independientemente de que surjan reportes.
+- **Trabajo adicional:** además de su rutina, atienden solicitudes reactivas (igual que Mantenimiento) y brindan apoyo en actividades puntuales del colegio (eventos, actividades especiales).
+- **Materiales:** manejan insumos de aseo y de cafetería — una categoría de materiales distinta a la de Mantenimiento (repuestos, piezas eléctricas, etc.), aunque el mecanismo de solicitud a compras cuando falta algo es el mismo.
+
+**Implicación para el diseño:** el módulo deberá distinguir entre **trabajo programado** (rutinas por zona) y **trabajo reactivo** (reportes/solicitudes), algo que no era evidente al levantar solo Mantenimiento, donde todo el trabajo es reactivo.
+
+## 6. Problemas identificados (gaps)
 
 1. **Sin canal único:** el reporte se dispersa entre 4 canales distintos según el caso, sin regla explícita y consistente de cuál usar.
 2. **Sin priorización centralizada:** cada trabajador decide qué atender primero sin visibilidad del conjunto.
@@ -74,11 +84,10 @@ No existe un plan de mantenimiento preventivo formal. Hay un intento reciente de
 5. **Sin datos históricos:** ninguna instancia (rectora, coordinación) puede hoy sacar frecuencia o patrones de fallas para planificar preventivo.
 6. **Sin mantenimiento preventivo real:** todo el esfuerzo actual es reactivo.
 
-## 6. Notas para el diseño del módulo (a futuro, no ahora)
+## 7. Notas para el diseño del módulo (a futuro, no ahora)
 
-Estos gaps son la base directa de los requisitos que el módulo de Mantenimiento del SGO deberá resolver: canal único de reporte, asignación con prioridad visible, registro de cierre, control básico de inventario, e historial para habilitar planificación preventiva.
+Estos gaps son la base directa de los requisitos que el módulo de Mantenimiento del SGO deberá resolver: canal único de reporte, asignación con prioridad visible, registro de cierre, control básico de inventario, historial para habilitar planificación preventiva, y soporte tanto para trabajo programado (rutinas) como reactivo (reportes).
 
-## 7. Pendiente de levantar
+## 8. Pendiente de levantar
 
-- Flujo de servicios generales/aseo con el mismo nivel de detalle (mencionado, no profundizado).
-- Otros procesos operativos fuera de mantenimiento, si se decide levantarlos antes de diseñar el módulo.
+- Otros procesos operativos fuera de mantenimiento y servicios generales, si se decide levantarlos antes de diseñar el módulo.
