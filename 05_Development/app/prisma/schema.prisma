@@ -1,0 +1,167 @@
+// Prisma schema inicial del módulo de Mantenimiento.
+// Basado en 03_Architecture/Entidades_Modulo_Mantenimiento_v0.1.md
+// y 03_Architecture/Modelo_Entidad_Relacion_v0.1.md
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Usuario {
+  id               String  @id @default(cuid())
+  nombre           String
+  rol              String
+  telefonoContacto String?
+  activo           Boolean @default(true)
+
+  especialidadDelTrabajador   EspecialidadArea? @relation("EspecialidadDelTrabajador", fields: [especialidadDelTrabajadorId], references: [id])
+  especialidadDelTrabajadorId String?
+
+  reportesCreados   Reporte[]         @relation("ReportadoPor")
+  reportesAsignados Reporte[]         @relation("AsignadoA")
+  comentarios       Comentario[]
+  evidenciasSubidas Evidencia[]
+  solicitudesCompra SolicitudCompra[]
+}
+
+model EspecialidadArea {
+  id                 String  @id @default(cuid())
+  nombre             String
+  encargadoPrincipal String?
+
+  usuarios Usuario[] @relation("EspecialidadDelTrabajador")
+  zonas    Zona[]
+  reportes Reporte[]
+  rutinas  Rutina[]
+}
+
+model Zona {
+  id     String @id @default(cuid())
+  nombre String
+  tipo   String
+
+  especialidadResponsableZona   EspecialidadArea @relation(fields: [especialidadResponsableZonaId], references: [id])
+  especialidadResponsableZonaId String
+
+  reportes Reporte[]
+  rutinas  Rutina[]
+}
+
+model Reporte {
+  id                String    @id @default(cuid())
+  tituloDescripcion String
+  fechaCreacion     DateTime  @default(now())
+  fechaResolucion   DateTime?
+  esRutina          Boolean   @default(false)
+
+  zona   Zona   @relation(fields: [zonaId], references: [id])
+  zonaId String
+
+  especialidad   EspecialidadArea @relation(fields: [especialidadId], references: [id])
+  especialidadId String
+
+  prioridad   Prioridad @relation(fields: [prioridadId], references: [id])
+  prioridadId String
+
+  estado   Estado @relation(fields: [estadoId], references: [id])
+  estadoId String
+
+  reportadoPor   Usuario @relation("ReportadoPor", fields: [reportadoPorId], references: [id])
+  reportadoPorId String
+
+  asignadoA   Usuario? @relation("AsignadoA", fields: [asignadoAId], references: [id])
+  asignadoAId String?
+
+  rutinaOrigen   Rutina? @relation(fields: [rutinaOrigenId], references: [id])
+  rutinaOrigenId String?
+
+  comentarios       Comentario[]
+  evidencias        Evidencia[]
+  solicitudesCompra SolicitudCompra[]
+}
+
+model Prioridad {
+  id     String @id @default(cuid())
+  nombre String
+
+  reportes Reporte[]
+}
+
+model Estado {
+  id     String @id @default(cuid())
+  nombre String
+
+  reportes Reporte[]
+}
+
+model Rutina {
+  id               String    @id @default(cuid())
+  nombreTarea      String
+  frecuencia       String
+  ultimaEjecucion  DateTime?
+  proximaEjecucion DateTime?
+
+  zona   Zona   @relation(fields: [zonaId], references: [id])
+  zonaId String
+
+  especialidad   EspecialidadArea @relation(fields: [especialidadId], references: [id])
+  especialidadId String
+
+  reportesGenerados Reporte[]
+}
+
+model MaterialInsumo {
+  id                 String  @id @default(cuid())
+  nombre             String
+  categoria          String
+  cantidadDisponible Int?
+  unidad             String?
+
+  solicitudesCompra SolicitudCompra[]
+}
+
+model SolicitudCompra {
+  id       String   @id @default(cuid())
+  cantidad Int
+  fecha    DateTime @default(now())
+  estado   String
+
+  material   MaterialInsumo @relation(fields: [materialId], references: [id])
+  materialId String
+
+  solicitadoPor   Usuario @relation(fields: [solicitadoPorId], references: [id])
+  solicitadoPorId String
+
+  reporteAsociado   Reporte? @relation(fields: [reporteAsociadoId], references: [id])
+  reporteAsociadoId String?
+}
+
+model Comentario {
+  id    String   @id @default(cuid())
+  texto String
+  fecha DateTime @default(now())
+
+  reporteAsociado   Reporte @relation(fields: [reporteAsociadoId], references: [id])
+  reporteAsociadoId String
+
+  autor   Usuario @relation(fields: [autorId], references: [id])
+  autorId String
+}
+
+model Evidencia {
+  id      String   @id @default(cuid())
+  archivo String
+  tipo    String
+  fecha   DateTime @default(now())
+
+  reporteAsociado   Reporte @relation(fields: [reporteAsociadoId], references: [id])
+  reporteAsociadoId String
+
+  subidoPor   Usuario @relation(fields: [subidoPorId], references: [id])
+  subidoPorId String
+}
