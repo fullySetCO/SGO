@@ -18,6 +18,7 @@ model Usuario {
   rol              String
   telefonoContacto String?
   activo           Boolean @default(true)
+  authUserId       String? @unique @db.Uuid
 
   especialidadDelTrabajador   EspecialidadArea? @relation("EspecialidadDelTrabajador", fields: [especialidadDelTrabajadorId], references: [id])
   especialidadDelTrabajadorId String?

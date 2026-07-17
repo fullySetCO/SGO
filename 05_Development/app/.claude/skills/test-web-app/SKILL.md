@@ -81,15 +81,16 @@ page.on("console", (msg) => {
 });
 
 await page.goto(base + "/");
-await page.waitForLoadState("networkidle");
+await page.waitForSelector('input[name="email"]', { timeout: 30000 });
 console.log("URL:", page.url()); // debería ser /login si no hay sesión
 await page.screenshot({ path: shotDir + "/01-redirect-login.png" });
 
 await page.fill('input[name="email"]', "usuario@ejemplo.com");
 await page.fill('input[name="password"]', "contraseña");
 await page.click('button[type="submit"]');
-await page.waitForURL(base + "/", { timeout: 20000 }); // margen por cold-compile
-await page.waitForLoadState("networkidle");
+await page.waitForSelector("h1:has-text(\"Texto de la página logueada\")", {
+  timeout: 30000, // margen por cold-compile
+});
 await page.screenshot({ path: shotDir + "/02-logged-in.png" });
 
 console.log("Console errors:", consoleErrors);
@@ -103,6 +104,14 @@ Notas:
   buena: la página puede renderizar bien y aun así fallar un fetch.
 - Después de cada screenshot, **leerlo con la herramienta Read** para
   confirmar visualmente — no basta con que el script no tire error.
+
+**Gotcha (`waitForLoadState("networkidle")` cuelga):** en `next dev`, el
+websocket de HMR queda abierto permanentemente, así que `networkidle`
+nunca se cumple y el timeout revienta incluso cuando la página cargó bien
+hace rato. No usar `waitForLoadState("networkidle")` en este proyecto —
+usar siempre `waitForSelector(...)` sobre un elemento real de la página
+destino (o `waitForURL` para el cambio de ruta), como en el ejemplo de
+arriba.
 
 ## 4. Detener el servidor
 
