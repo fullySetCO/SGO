@@ -1,8 +1,10 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
+import { getUsuarioActual } from "@/lib/usuario";
+import { puedeCambiarEstadoReporte } from "@/lib/permisos";
 
 export type CrearReporteState = { error: string } | undefined;
 
@@ -10,24 +12,10 @@ export async function crearReporte(
   _prevState: CrearReporteState,
   formData: FormData,
 ): Promise<CrearReporteState> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/login");
-  }
-
-  const usuario = await prisma.usuario.findFirst({
-    where: { authUserId: user.id },
-  });
+  const usuario = await getUsuarioActual();
 
   if (!usuario) {
-    return {
-      error:
-        "Tu cuenta no está vinculada a un Usuario del sistema. Contacta al administrador.",
-    };
+    redirect("/login");
   }
 
   const zonaId = formData.get("zonaId") as string;
@@ -65,4 +53,57 @@ export async function crearReporte(
   });
 
   redirect("/");
+}
+
+export type CambiarEstadoState = { error: string } | undefined;
+
+export async function cambiarEstado(
+  _prevState: CambiarEstadoState,
+  formData: FormData,
+): Promise<CambiarEstadoState> {
+  const usuario = await getUsuarioActual();
+
+  if (!usuario) {
+    redirect("/login");
+  }
+
+  const reporteId = formData.get("reporteId") as string;
+  const nuevoEstadoId = formData.get("estadoId") as string;
+  const asignadoAId = formData.get("asignadoAId") as string | null;
+
+  const reporte = await prisma.reporte.findUnique({ where: { id: reporteId } });
+  if (!reporte) {
+    return { error: "El reporte no existe." };
+  }
+
+  if (!puedeCambiarEstadoReporte(usuario, reporte)) {
+    return {
+      error: "No tienes permiso para cambiar el estado de este reporte.",
+    };
+  }
+
+  const nuevoEstado = await prisma.estado.findUnique({
+    where: { id: nuevoEstadoId },
+  });
+  if (!nuevoEstado) {
+    return { error: "El estado seleccionado no es válido." };
+  }
+
+  if (nuevoEstado.nombre === "asignado" && !asignadoAId) {
+    return { error: "Selecciona un usuario para asignar el reporte." };
+  }
+
+  await prisma.reporte.update({
+    where: { id: reporte.id },
+    data: {
+      estadoId: nuevoEstado.id,
+      ...(nuevoEstado.nombre === "asignado" ? { asignadoAId } : {}),
+      ...(nuevoEstado.nombre === "resuelto"
+        ? { fechaResolucion: new Date() }
+        : {}),
+    },
+  });
+
+  revalidatePath(`/reportes/${reporte.id}`);
+  revalidatePath("/");
 }

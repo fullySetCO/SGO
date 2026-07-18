@@ -2,20 +2,53 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-const TEST_AUTH_EMAIL = "prueba@prueba.com";
-
-async function main() {
+async function vincularUsuario({
+  email,
+  nombre,
+  rol,
+  especialidadId,
+  requerido,
+}: {
+  email: string;
+  nombre: string;
+  rol: string;
+  especialidadId: string;
+  requerido: boolean;
+}) {
   const authUsers = await prisma.$queryRaw<
     { id: string }[]
-  >`SELECT id FROM auth.users WHERE email = ${TEST_AUTH_EMAIL}`;
+  >`SELECT id FROM auth.users WHERE email = ${email}`;
   const authUser = authUsers[0];
 
   if (!authUser) {
-    throw new Error(
-      `No se encontró en Supabase Auth el usuario '${TEST_AUTH_EMAIL}'. Créalo en el dashboard (Authentication → Users) antes de correr el seed.`,
+    if (requerido) {
+      throw new Error(
+        `No se encontró en Supabase Auth el usuario '${email}'. Créalo en el dashboard (Authentication → Users) antes de correr el seed.`,
+      );
+    }
+    console.warn(
+      `Aviso: no se encontró en Supabase Auth el usuario '${email}'; se omite su vínculo.`,
     );
+    return null;
   }
 
+  let usuario = await prisma.usuario.findFirst({
+    where: { authUserId: authUser.id },
+  });
+  if (!usuario) {
+    usuario = await prisma.usuario.create({
+      data: {
+        nombre,
+        rol,
+        authUserId: authUser.id,
+        especialidadDelTrabajadorId: especialidadId,
+      },
+    });
+  }
+  return usuario;
+}
+
+async function main() {
   let especialidad = await prisma.especialidadArea.findFirst({
     where: { nombre: "Mantenimiento General" },
   });
@@ -38,13 +71,12 @@ async function main() {
     });
   }
 
-  let estadoRecibido = await prisma.estado.findFirst({
-    where: { nombre: "recibido" },
-  });
-  if (!estadoRecibido) {
-    estadoRecibido = await prisma.estado.create({
-      data: { nombre: "recibido" },
-    });
+  const nombresEstado = ["recibido", "asignado", "en proceso", "resuelto"];
+  for (const nombre of nombresEstado) {
+    const existente = await prisma.estado.findFirst({ where: { nombre } });
+    if (!existente) {
+      await prisma.estado.create({ data: { nombre } });
+    }
   }
 
   const nombresPrioridad = ["crítica", "alta", "media", "baja"];
@@ -55,25 +87,28 @@ async function main() {
     }
   }
 
-  let usuario = await prisma.usuario.findFirst({
-    where: { authUserId: authUser.id },
+  const usuarioTecnico = await vincularUsuario({
+    email: "prueba@prueba.com",
+    nombre: "Usuario de Prueba",
+    rol: "tecnico",
+    especialidadId: especialidad.id,
+    requerido: true,
   });
-  if (!usuario) {
-    usuario = await prisma.usuario.create({
-      data: {
-        nombre: "Usuario de Prueba",
-        rol: "tecnico",
-        authUserId: authUser.id,
-        especialidadDelTrabajadorId: especialidad.id,
-      },
-    });
-  }
+
+  const usuarioJefe = await vincularUsuario({
+    email: "jefe@jefe.com",
+    nombre: "Jefe de Prueba",
+    rol: "jefe",
+    especialidadId: especialidad.id,
+    requerido: false,
+  });
 
   console.log("Seed completo:", {
     especialidad: especialidad.nombre,
     zona: zona.nombre,
-    estado: estadoRecibido.nombre,
-    usuario: usuario.nombre,
+    estados: nombresEstado,
+    usuarioTecnico: usuarioTecnico?.nombre,
+    usuarioJefe: usuarioJefe?.nombre ?? "(no vinculado)",
   });
 }
 

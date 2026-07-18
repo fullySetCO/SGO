@@ -71,7 +71,12 @@ export default async function Home() {
                 {reportes.map((reporte) => (
                   <tr key={reporte.id}>
                     <td className="px-4 py-3 text-black dark:text-zinc-50">
-                      {reporte.tituloDescripcion}
+                      <Link
+                        href={`/reportes/${reporte.id}`}
+                        className="hover:underline"
+                      >
+                        {reporte.tituloDescripcion}
+                      </Link>
                     </td>
                     <td className="px-4 py-3 text-zinc-700 dark:text-zinc-300">
                       {reporte.zona.nombre}
