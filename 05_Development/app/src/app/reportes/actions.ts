@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getUsuarioActual } from "@/lib/usuario";
 import { puedeCambiarEstadoReporte } from "@/lib/permisos";
+import { notificarJefatura, notificarUsuario } from "@/lib/notificaciones";
 
 export type CrearReporteState = { error: string } | undefined;
 
@@ -41,7 +42,7 @@ export async function crearReporte(
     };
   }
 
-  await prisma.reporte.create({
+  const reporte = await prisma.reporte.create({
     data: {
       tituloDescripcion,
       zonaId: zona.id,
@@ -51,6 +52,11 @@ export async function crearReporte(
       reportadoPorId: usuario.id,
     },
   });
+
+  await notificarJefatura(
+    `Nuevo reporte: ${reporte.tituloDescripcion}`,
+    reporte.id,
+  );
 
   redirect("/");
 }
@@ -103,6 +109,21 @@ export async function cambiarEstado(
         : {}),
     },
   });
+
+  if (nuevoEstado.nombre === "asignado" && asignadoAId) {
+    await notificarUsuario(
+      asignadoAId,
+      `Se te asignó el reporte: ${reporte.tituloDescripcion}`,
+      reporte.id,
+    );
+  }
+
+  if (nuevoEstado.nombre === "resuelto") {
+    await notificarJefatura(
+      `Reporte resuelto: ${reporte.tituloDescripcion}`,
+      reporte.id,
+    );
+  }
 
   revalidatePath(`/reportes/${reporte.id}`);
   revalidatePath("/");

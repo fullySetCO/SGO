@@ -28,6 +28,7 @@ model Usuario {
   comentarios       Comentario[]
   evidenciasSubidas Evidencia[]
   solicitudesCompra SolicitudCompra[]
+  notificaciones    Notificacion[]
 }
 
 model EspecialidadArea {
@@ -84,6 +85,7 @@ model Reporte {
   comentarios       Comentario[]
   evidencias        Evidencia[]
   solicitudesCompra SolicitudCompra[]
+  notificaciones    Notificacion[]
 }
 
 model Prioridad {
@@ -165,4 +167,17 @@ model Evidencia {
 
   subidoPor   Usuario @relation(fields: [subidoPorId], references: [id])
   subidoPorId String
+}
+
+model Notificacion {
+  id            String   @id @default(cuid())
+  mensaje       String
+  leida         Boolean  @default(false)
+  fechaCreacion DateTime @default(now())
+
+  usuarioDestino   Usuario @relation(fields: [usuarioDestinoId], references: [id])
+  usuarioDestinoId String
+
+  reporteAsociado   Reporte @relation(fields: [reporteAsociadoId], references: [id])
+  reporteAsociadoId String
 }
