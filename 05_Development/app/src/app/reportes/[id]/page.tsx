@@ -35,12 +35,10 @@ export default async function ReportePage({
     ? puedeCambiarEstadoReporte(usuario, reporte)
     : false;
 
-  const [estados, usuarios] = puedeEditar
-    ? await Promise.all([
-        prisma.estado.findMany(),
-        prisma.usuario.findMany({ orderBy: { nombre: "asc" } }),
-      ])
-    : [[], []];
+  const estados = puedeEditar ? await prisma.estado.findMany() : [];
+  const usuarios = puedeEditar
+    ? await prisma.usuario.findMany({ orderBy: { nombre: "asc" } })
+    : [];
 
   const estadosSeleccionables = estados
     .filter((estado) => ORDEN_ESTADO_SELECCIONABLE.includes(estado.nombre))

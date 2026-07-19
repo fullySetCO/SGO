@@ -1,4 +1,4 @@
-const ROLES_CON_PERMISO_TOTAL = ["jefe", "administrador"];
+export const ROLES_CON_PERMISO_TOTAL = ["jefe", "administrador"];
 
 export function puedeCambiarEstadoReporte(
   usuario: { id: string; rol: string },
