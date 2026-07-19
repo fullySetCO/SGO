@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getUsuarioActual } from "@/lib/usuario";
-import { puedeCambiarEstadoReporte } from "@/lib/permisos";
+import { puedeCambiarEstadoReporte, puedeComentarReporte } from "@/lib/permisos";
 import { notificarJefatura, notificarUsuario } from "@/lib/notificaciones";
 
 export type CrearReporteState = { error: string } | undefined;
@@ -127,4 +127,43 @@ export async function cambiarEstado(
 
   revalidatePath(`/reportes/${reporte.id}`);
   revalidatePath("/");
+}
+
+export type AgregarComentarioState = { error: string } | undefined;
+
+export async function agregarComentario(
+  _prevState: AgregarComentarioState,
+  formData: FormData,
+): Promise<AgregarComentarioState> {
+  const usuario = await getUsuarioActual();
+
+  if (!usuario) {
+    redirect("/login");
+  }
+
+  const reporteId = formData.get("reporteId") as string;
+  const texto = (formData.get("texto") as string)?.trim();
+
+  const reporte = await prisma.reporte.findUnique({ where: { id: reporteId } });
+  if (!reporte) {
+    return { error: "El reporte no existe." };
+  }
+
+  if (!puedeComentarReporte(usuario, reporte)) {
+    return { error: "No tienes permiso para comentar este reporte." };
+  }
+
+  if (!texto) {
+    return { error: "Escribe un comentario antes de enviar." };
+  }
+
+  await prisma.comentario.create({
+    data: {
+      texto,
+      reporteAsociadoId: reporte.id,
+      autorId: usuario.id,
+    },
+  });
+
+  revalidatePath(`/reportes/${reporte.id}`);
 }

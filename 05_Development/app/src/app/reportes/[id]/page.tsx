@@ -2,9 +2,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getUsuarioActual } from "@/lib/usuario";
-import { puedeCambiarEstadoReporte } from "@/lib/permisos";
+import { puedeCambiarEstadoReporte, puedeComentarReporte } from "@/lib/permisos";
 import { capitalizar, formatFecha } from "@/lib/format";
 import { CambiarEstadoForm } from "./cambiar-estado-form";
+import { ComentarioForm } from "./comentario-form";
 
 const ORDEN_ESTADO_SELECCIONABLE = ["asignado", "en proceso", "resuelto"];
 
@@ -34,11 +35,20 @@ export default async function ReportePage({
   const puedeEditar = usuario
     ? puedeCambiarEstadoReporte(usuario, reporte)
     : false;
+  const puedeComentar = usuario
+    ? puedeComentarReporte(usuario, reporte)
+    : false;
 
   const estados = puedeEditar ? await prisma.estado.findMany() : [];
   const usuarios = puedeEditar
     ? await prisma.usuario.findMany({ orderBy: { nombre: "asc" } })
     : [];
+
+  const comentarios = await prisma.comentario.findMany({
+    where: { reporteAsociadoId: reporte.id },
+    include: { autor: true },
+    orderBy: { fecha: "asc" },
+  });
 
   const estadosSeleccionables = estados
     .filter((estado) => ORDEN_ESTADO_SELECCIONABLE.includes(estado.nombre))
@@ -120,6 +130,40 @@ export default async function ReportePage({
             No tienes permiso para cambiar el estado de este reporte.
           </p>
         )}
+
+        <div className="flex flex-col gap-4 rounded-lg border border-black/[.08] bg-white p-6 dark:border-white/[.145] dark:bg-black">
+          <h2 className="text-lg font-semibold text-black dark:text-zinc-50">
+            Comentarios
+          </h2>
+
+          {comentarios.length === 0 ? (
+            <p className="text-sm text-zinc-500 dark:text-zinc-400">
+              Todavía no hay comentarios.
+            </p>
+          ) : (
+            <ul className="flex flex-col gap-4">
+              {comentarios.map((comentario) => (
+                <li key={comentario.id} className="flex flex-col gap-1">
+                  <div className="flex items-baseline justify-between gap-2">
+                    <span className="text-sm font-medium text-black dark:text-zinc-50">
+                      {comentario.autor.nombre}
+                    </span>
+                    <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                      {formatFecha(comentario.fecha)}
+                    </span>
+                  </div>
+                  <p className="text-sm text-zinc-700 dark:text-zinc-300">
+                    {comentario.texto}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          {puedeComentar && (
+            <ComentarioForm key={comentarios.length} reporteId={reporte.id} />
+          )}
+        </div>
       </div>
     </div>
   );
